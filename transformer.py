@@ -5,7 +5,7 @@ import feedforward
 
 
 class Transformer:
-    def __init__(self, BETA, GAMMA, D_MODEL, D_HEAD,
+    def __init__(self, D_MODEL, D_HEAD,
                  wq: np.ndarray | None = None,
                  wk: np.ndarray | None = None,
                  wv: np.ndarray | None = None,
@@ -17,8 +17,6 @@ class Transformer:
                  gamma1: np.ndarray | None = None,
                  beta2: np.ndarray | None = None,
                  gamma2: np.ndarray | None = None):
-        self.BETA = BETA
-        self.GAMMA = GAMMA
         self.D_MODEL = D_MODEL
         self.D_HEAD = D_HEAD
         self.attention = attention.Attention(self.D_MODEL, self.D_HEAD,

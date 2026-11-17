@@ -1,6 +1,5 @@
 import numpy as np
 
-import tokeniser
 import embeddings
 import outputlayer
 import transformer
@@ -11,50 +10,40 @@ class GPT:
                  NUM_HEADS: int, D_HEAD: int, NUM_TRANSFORMERS: int,
                  VOCABULARY_SIZE: int,
                  vocab_embeddings: np.ndarray | None = None,
-                 position_embeddings: np.ndarray | None = None):
+                 position_embeddings: np.ndarray | None = None,
+                 wqs: np.ndarray | None = None,
+                 wks: np.ndarray | None = None,
+                 wvs: np.ndarray | None = None,
+                 w1s: np.ndarray | None = None,
+                 w2s: np.ndarray | None = None,
+                 b1s: np.ndarray | None = None,
+                 b2s: np.ndarray | None = None,
+                 beta1s: np.ndarray | None = None,
+                 gamma1s: np.ndarray | None = None,
+                 beta2s: np.ndarray | None = None,
+                 gamma2s: np.ndarray | None = None,
+                 output_matrix: np.ndarray | None = None):
         self.embedder = embeddings.Embeddings(VOCABULARY_SIZE, D_MODEL,
                                               CONTEXT_LENGTH, vocab_embeddings,
                                               position_embeddings)
         self.blocks = []
-        for
+        for i in range(NUM_TRANSFORMERS):
+            if wqs is None:
+                trans = transformer.Transformer(D_MODEL, D_HEAD)
+            else:
+                trans = transformer.Transformer(D_MODEL, D_HEAD,
+                                                wqs[i], wks[i], wvs[i], w1s[i],
+                                                w2s[i], b1s[i], b2s[i],
+                                                beta1s[i], gamma1s[i],
+                                                beta2s[i], gamma2s[i])
+            self.blocks.append(trans)
+        self.ol = outputlayer.OutputLayer(D_MODEL,
+                                          VOCABULARY_SIZE,
+                                          output_matrix)
 
     def __call__(self, intputs: np.ndarray) -> None:
-        next_token = 0
-        block = transformer.Transformer(BETA, GAMMA, D_MODEL, D_HEAD)
-        ol = outputlayer.OutputLayer(D_MODEL, tokenizer.num_tokens)
-        print(text[0], end=' ')
-        while next_token != "[EOS]":
-            tokens = tokenizer(text)
-            # print(tokens.shape)
-            x = embedder(tokens)
-            for _ in range(NUM_TRANSFORMERS):
-                x = block(x)
-            x = ol(x)
-            probabilities = softmax.softmax(x)[:, -1, :]
-            indexes = []
-            for batch in probabilities:
-                indexes.append(np.random.choice(
-                    range(tokenizer.num_tokens),
-                    p=batch
-                ))
-                print(batch[indexes[-1]])
-            # indexes = probabilities.argmax(axis=-1)
-            # print(indexes.shape)
-            next_token = tokenizer.tokenToString(indexes[0])
-            text[0] = text[0] + ' ' + next_token
-            print(next_token, end=' ')
-
-        with open("training_data_shakespeare.txt") as file:
-            text = file.read()
-        print("Read training data")
-        tokenizer = tokeniser.Tokeniser(text, CONTEXT_LENGTH)
-        print("vocab built")
-        # print(tokenizer._str_to_int)
-        tokens = tokenizer(np.array(["Hail"]))
-        # print(tokens)
-        for token in tokens[0]:
-            print(f"{token} = {repr(tokenizer.tokenToString(token))}")
-
-
-if __name__ == "__main__":
-    main()
+        x = self.embedder(intputs)
+        for block in self.blocks:
+            x = block(x)
+        x = self.ol(x)
+        return x
